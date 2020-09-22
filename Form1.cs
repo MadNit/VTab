@@ -47,13 +47,10 @@ namespace VTab
 
         private async void SshButton_Click_1(object sender, EventArgs e)
         {
-            // Create a tab
-            String title = "vijai123";
-            VCustomTab myTabPage = new VCustomTab(title);
-            tabControl1.TabPages.Add(myTabPage);
             //myTabPage.WriteLine(title);
-            string process_exec = "C:\\Users\\medav2\\source\\repos\\VTab\\exe\\plink.exe";
-            await RunProcessAsync(process_exec, myTabPage);
+            string ansicon_proc = "C:\\Users\\medav2\\source\\repos\\VTab\\exe\\ansicon.exe";
+            string plnkexe_proc = "C:\\Users\\medav2\\source\\repos\\VTab\\exe\\plink.exe";
+            await RunProcessAsync(ansicon_proc, plnkexe_proc);
 
         }
 
@@ -70,12 +67,15 @@ namespace VTab
             await txtWr.WriteAsync(text);
         }
 
-            public async Task RunProcessAsync(string cmd, VCustomTab myTabPage)
+            public async Task RunProcessAsync(string ansicon_cmd, string plink_cmd)
         {
             // Execute plink.exe
             // Exit on error and close the tab
             // Else stay on the tab, wait for the user input 
             // and return output.
+            // Create a tab
+            VCustomTab myTabPage = new VCustomTab("");
+            
             try
             {
                 using (Process myProcess = new Process())
@@ -83,9 +83,9 @@ namespace VTab
                     String macname = macTxtBox.Text;
                     String usrname = usrTxtBox.Text;
                     String pwd = pwdTxtBox.Text;
-                    String cmd_prompt_recv;
-                    String args = "-l " + usrname + " -pw " + pwd + " " + macname;
-                    ProcessStartInfo startInfo = new ProcessStartInfo(cmd, args);
+                    //String args = plink_cmd + " -l " + usrname + " -pw " + pwd + " " + macname;
+                    String args = $"{plink_cmd} -l {usrname} -pw {pwd} {macname}";
+                    ProcessStartInfo startInfo = new ProcessStartInfo(ansicon_cmd, args);
                     startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     startInfo.UseShellExecute = false;
                     startInfo.CreateNoWindow = true;
@@ -104,100 +104,52 @@ namespace VTab
 
                     String outstr = "vj";
                     myProcess.Start();
-
+                    String tempStr = "";
                     outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
-                    myTabPage.WriteLine(outstr);
+                    tempStr += outstr;
                     outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
-                    myTabPage.WriteLine(outstr);
+                    tempStr += outstr;
 
-                    string nextcmd = "\n";
+                    string nextcmd = "\n"; // Enter after success
                     await WriteToProcessAsync(myProcess.StandardInput, nextcmd);
-                    myTabPage.WriteLine(nextcmd);
-
-                    while (!outstr.Trim().EndsWith("$"))
+                    
+                    ANSIEscapeSeq ansi_seq = new ANSIEscapeSeq();
+                    // TODO: The end with character may differ : Taken Care, ANSIEscapeSeq class
+                    while (outstr != null && !outstr.Trim().EndsWith("$"))
                     {
+                        tempStr += outstr + "\n";
                         outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
-                        Console.WriteLine("outstr in loop:" + outstr);
-                        myTabPage.WriteLine(outstr + "\n");
+                        /*
+                        byte[] escTitleBytesRec = Encoding.ASCII.GetBytes(outstr);
+                        foreach (byte b in escTitleBytesRec)
+                            Console.Write((char)b + "( " + b + ") ");
+                        */
+                        //myTabPage.WriteLine(outstr + "\n");
                     }
-                    Console.WriteLine("CommandLine Received is:" + outstr);
-                    //myTabPage.WriteLine(outstr);
+                    // Get the command prompt and title now.
+                    var out_tup = ansi_seq.getTitleAndCommandPrompt(outstr);
+                    myTabPage.setTitle(out_tup.Item1);
+                    tabControl1.TabPages.Add(myTabPage);
 
-                    // TODO: The command prompt can be any character '$', '<', '>', '#', etc.
+                    myTabPage.WriteLine(tempStr);
+                    myTabPage.WriteLine(out_tup.Item2);
+
+                    // Loop until the command is logout or exit or on error.
+
+                    outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
                     /*
-                    if (outstr.Trim().EndsWith("$"))
-                    { 
-                        Console.WriteLine("First:" + outstr);
-                        
-                        Console.WriteLine(outstr.Substring(0, 4));
-                        byte esc_char = 27;
-                        char[] chr = { (char)27, (char)93, (char)48, (char)59 };
-                        byte[] escTitleBytesAct = Encoding.GetEncoding("UTF-8").GetBytes(chr);
-                        byte[] escTitleBytesRec = Encoding.ASCII.GetBytes(outstr.Substring(0, 4));
-                        byte firstChar = escTitleBytesRec[0];
-                        if (esc_char.Equals(firstChar))
-                        {
-                            String cmd_prompt_recv = outstr.Substring(4);
-                            String cmd_prompt_disp = outstr.Substring(outstr.IndexOf('~') + 10);
-                            Console.WriteLine("Command prompt received is:" + cmd_prompt_recv);
-                            Console.WriteLine("Command prompt to display is:" + cmd_prompt_disp);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Not a command prompt:" + outstr);
-                        }
-                    }
-                    else
-                        Console.WriteLine("Last:" + outstr);
-
-                    */
-
-
                     try
                     {
-                        nextcmd = "logout";
+                        Thread.Sleep(10000);
+                        //nextcmd = "logout";
+                        nextcmd = "";
                         await WriteToProcessAsync(myProcess.StandardInput, nextcmd);
                     }
-                    catch (Exception ex)
+                    catch (Exception eex)
                     {
-                        Console.WriteLine($"An error occurred");  // The $ is the fstrings in python.
+                        Console.WriteLine($"An error occurred {eex.Message}");  // The $ is the fstrings in python.
                     }
-                    
-
-                    // WaitForExit will block the entire UI when used in Forms.
-                    // myProcess.WaitForExit();
-                    //Thread.Sleep(10000);
-
-                    /*
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-                    myProcess.StandardInput.WriteLine("\n");
-
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-
-
-                    myProcess.StandardInput.WriteLine("ls -ltr");
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-                    outstr = "" + myProcess.StandardOutput.ReadLine();
-                    myTabPage.WriteLine(outstr);
-                    */
-
-
-
-
-
-
-                    //Thread.Sleep(10);
-
-                    /*
+                   
                     if (myProcess.HasExited)
                     {
                         myProcess.Close();
@@ -208,9 +160,6 @@ namespace VTab
                         myProcess.Kill();
                     }
                     */
-
-
-
                 }
             }
             catch (Exception ex)

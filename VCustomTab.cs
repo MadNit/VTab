@@ -41,6 +41,11 @@ namespace VTab
 
         }
 
+        public void setTitle(String title_str)
+        {
+            this.Text = title_str;
+        }
+
         public void WriteLine(String data)
         {
             /*

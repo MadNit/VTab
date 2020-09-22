@@ -12,6 +12,7 @@ namespace VTab
 {
     public partial class TabPageUserControl : UserControl
     {
+        int last_pos;
         public TabPageUserControl()
         {
             InitializeComponent();
@@ -24,7 +25,6 @@ namespace VTab
 
         void CopyAction(object sender, EventArgs e)
         {
-            Graphics objGraphics;
             Clipboard.SetData(DataFormats.Rtf, TabPageRTBox.SelectedRtf);
             Clipboard.Clear();
         }
@@ -43,6 +43,8 @@ namespace VTab
             TabPageRTBox.AppendText(data);
             TabPageRTBox.Select(0, TabPageRTBox.Text.Length - 1);
             TabPageRTBox.SelectionProtected = true;
+            last_pos = TabPageRTBox.Text.Length;
+            Console.WriteLine($"Last position in Append Text : {last_pos}");
         }
 
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
@@ -63,6 +65,15 @@ namespace VTab
 
                 TabPageRTBox.ContextMenu = contextMenu;
             }
+
+        }
+
+        private void TabPageRTBox_Enter(object sender, EventArgs e)
+        {
+            Console.WriteLine($"Last position in TabPageRTBox_Enter : {last_pos}");
+            Console.WriteLine($"Text is : {TabPageRTBox.Text}");
+            string ent_cmd = TabPageRTBox.Text.Substring(last_pos);
+            Console.WriteLine($"Entered command is : {ent_cmd}");
 
         }
     }
