@@ -13,6 +13,10 @@ namespace VTab
     public partial class TabPageUserControl : UserControl
     {
         int last_pos;
+        String temp_str = "";
+        String cmd_prompt = "";
+        bool shift_pressed = false;
+
         public TabPageUserControl()
         {
             InitializeComponent();
@@ -41,9 +45,11 @@ namespace VTab
         public void AppendText(String data)
         {
             TabPageRTBox.AppendText(data);
-            TabPageRTBox.Select(0, TabPageRTBox.Text.Length - 1);
+            TabPageRTBox.Select(0, TabPageRTBox.Text.Length);
             TabPageRTBox.SelectionProtected = true;
+            
             last_pos = TabPageRTBox.Text.Length;
+            TabPageRTBox.SelectionStart = last_pos;
             Console.WriteLine($"Last position in Append Text : {last_pos}");
         }
 
@@ -76,5 +82,54 @@ namespace VTab
             Console.WriteLine($"Entered command is : {ent_cmd}");
 
         }
+
+        public void setPrompt(string cmd_prompt)
+        {
+            this.cmd_prompt = cmd_prompt;
+        }
+
+        public String getCommand()
+        {
+            return temp_str;
+        }
+
+        private void TabPageRTBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                temp_str = TabPageRTBox.Text.Substring(last_pos).Trim();
+                Console.WriteLine($"Command is {temp_str}");
+                this.AppendText("\n");
+              
+                TabPageRTBox.DeselectAll();
+            }
+            /*
+            else
+            {
+                if(e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.Capital)
+                {
+                    shift_pressed = true;
+                }
+                else
+                {
+                    int kval = e.KeyValue;
+                    if (!shift_pressed)
+                    {
+                        kval += 32;
+                    }
+                    temp_str += (char)kval;
+                }
+                
+            }
+            */
+        }
+
+        /*
+        private void TabPageRTBox_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Shift || e.KeyCode == Keys.Capital)
+                shift_pressed = false;
+        }
+        */
     }
 }

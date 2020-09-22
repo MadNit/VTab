@@ -46,6 +46,11 @@ namespace VTab
             this.Text = title_str;
         }
 
+        public void setPrompt(string cmd_prompt)
+        {
+            tbpgUC.setPrompt(cmd_prompt);
+        }
+
         public void WriteLine(String data)
         {
             /*

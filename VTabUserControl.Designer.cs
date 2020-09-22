@@ -44,7 +44,7 @@
             this.TabPageRTBox.Size = new System.Drawing.Size(579, 270);
             this.TabPageRTBox.TabIndex = 0;
             this.TabPageRTBox.Text = "";
-            this.TabPageRTBox.Enter += new System.EventHandler(this.TabPageRTBox_Enter);
+            this.TabPageRTBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TabPageRTBox_KeyDown);
             this.TabPageRTBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.richTextBox1_MouseUp);
             // 
             // groupBox1

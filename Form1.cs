@@ -129,6 +129,7 @@ namespace VTab
                     // Get the command prompt and title now.
                     var out_tup = ansi_seq.getTitleAndCommandPrompt(outstr);
                     myTabPage.setTitle(out_tup.Item1);
+                    myTabPage.setPrompt(out_tup.Item2);
                     tabControl1.TabPages.Add(myTabPage);
 
                     myTabPage.WriteLine(tempStr);
