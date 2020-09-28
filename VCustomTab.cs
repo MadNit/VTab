@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,16 +11,9 @@ namespace VTab
  
     public class VCustomTab : TabPage
     {
-        public RichTextBox textbox;
         TabPageUserControl tbpgUC;
         public VCustomTab()
         {
-            /*
-            textbox = new RichTextBox();
-            this.Controls.Add(textbox);
-            textbox.Dock = DockStyle.Fill;
-            */
-
             tbpgUC = new TabPageUserControl();
             tbpgUC.Dock = DockStyle.Fill;
             this.Controls.Add(tbpgUC);
@@ -27,18 +21,10 @@ namespace VTab
 
         public VCustomTab(String title)
         {
-            /*
-            textbox = new RichTextBox();
-            this.Controls.Add(textbox);
-            textbox.Dock = DockStyle.Fill;
-            */
-
             this.Text = title;
             tbpgUC = new TabPageUserControl();
             tbpgUC.Dock = DockStyle.Fill;
             this.Controls.Add(tbpgUC);
-
-
         }
 
         public void setTitle(String title_str)
@@ -51,12 +37,13 @@ namespace VTab
             tbpgUC.setPrompt(cmd_prompt);
         }
 
+        public void setProcessTab(TabProcess tabProc)
+        {
+            tbpgUC.setProcessTab(tabProc);
+        }
+
         public void WriteLine(String data)
         {
-            /*
-            textbox.AppendText(data);
-            textbox.AppendText("\n");
-            */
             if (data != null)
             {
                 tbpgUC.AppendText(data);

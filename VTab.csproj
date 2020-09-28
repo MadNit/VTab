@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ANSIEscapeSeq.cs" />
+    <Compile Include="TabProcess.cs" />
     <Compile Include="VTabUserControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

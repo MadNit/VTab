@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace VTab
 {
@@ -15,7 +16,8 @@ namespace VTab
         int last_pos;
         String temp_str = "";
         String cmd_prompt = "";
-        bool shift_pressed = false;
+        //bool shift_pressed = false;
+        TabProcess tabProc;
 
         public TabPageUserControl()
         {
@@ -50,7 +52,7 @@ namespace VTab
             
             last_pos = TabPageRTBox.Text.Length;
             TabPageRTBox.SelectionStart = last_pos;
-            Console.WriteLine($"Last position in Append Text : {last_pos}");
+            TabPageRTBox.Focus();
         }
 
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
@@ -76,11 +78,7 @@ namespace VTab
 
         private void TabPageRTBox_Enter(object sender, EventArgs e)
         {
-            Console.WriteLine($"Last position in TabPageRTBox_Enter : {last_pos}");
-            Console.WriteLine($"Text is : {TabPageRTBox.Text}");
             string ent_cmd = TabPageRTBox.Text.Substring(last_pos);
-            Console.WriteLine($"Entered command is : {ent_cmd}");
-
         }
 
         public void setPrompt(string cmd_prompt)
@@ -93,15 +91,51 @@ namespace VTab
             return temp_str;
         }
 
-        private void TabPageRTBox_KeyDown(object sender, KeyEventArgs e)
+        public void setProcessTab(TabProcess mstr)
+        {
+            this.tabProc = mstr;
+        }
+
+        private async void TabPageRTBox_KeyDown(object sender, KeyEventArgs e)
         {
             if(e.KeyCode == Keys.Enter)
             {
                 temp_str = TabPageRTBox.Text.Substring(last_pos).Trim();
-                Console.WriteLine($"Command is {temp_str}");
+                Console.WriteLine($"Command TabPageRTBox_KeyDown is {temp_str}");
+                // write to the Stream from begining every time.
+                // Write the length first as int (4 bytes)
+                //mstream.Position = 0;
+                byte[] cmd_bytes = Encoding.Unicode.GetBytes(temp_str);
+                
+                byte[] cmd_len = BitConverter.GetBytes(cmd_bytes.Length);
+                int cmd_len_int = cmd_bytes.Length;
+                int len_of_int = cmd_len.Length;  // usually four bytes on 64 bit systems, sizeof int
+
+                /*
+                mstream.Write(cmd_len, 0, len_of_int);
+                int count = 0;
+                while (count < cmd_len_int)
+                {
+                    mstream.WriteByte(cmd_bytes[count++]);
+                }
+                */
+                //mstream.WriteAsync(temp_str);
+                await tabProc.WriteToProcessAsync(temp_str + "\n");
+                Console.WriteLine($"Written to stream........{temp_str}");
+
+                Console.WriteLine("Readming from stream........");
+                string outstr = await tabProc.ReadFromProcessAsync();
+                Console.WriteLine($"Line........:{outstr}");
+                outstr = await tabProc.ReadFromProcessAsync();
+                Console.WriteLine($"Line........:{outstr}");
+
                 this.AppendText("\n");
               
                 TabPageRTBox.DeselectAll();
+            }
+            else
+            {
+
             }
             /*
             else

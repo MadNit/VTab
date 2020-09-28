@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,6 +15,10 @@ namespace VTab
 {
     public partial class Form1 : Form
     {
+        MemoryStream memStream;
+        string LOGOUTCMD = "logout";
+        string EXITCMD = "exit";
+        TabProcess tabProc;
         public Form1()
         {
             InitializeComponent();
@@ -47,10 +52,12 @@ namespace VTab
 
         private async void SshButton_Click_1(object sender, EventArgs e)
         {
-            //myTabPage.WriteLine(title);
+            // Initiate a memory stream with 256 bytes
+            memStream = new MemoryStream(256);
             string ansicon_proc = "C:\\Users\\medav2\\source\\repos\\VTab\\exe\\ansicon.exe";
             string plnkexe_proc = "C:\\Users\\medav2\\source\\repos\\VTab\\exe\\plink.exe";
             await RunProcessAsync(ansicon_proc, plnkexe_proc);
+
 
         }
 
@@ -62,9 +69,46 @@ namespace VTab
             return text;
         }
 
-        public async Task WriteToProcessAsync(System.IO.TextWriter txtWr, string text)
+        public async Task WriteToProcessAsync(TextWriter txtWr, string text)
         {
             await txtWr.WriteAsync(text);
+        }
+
+        public async Task ReadFromMemStreamAsync()
+        {
+            string cmd = "";
+            while (!(cmd == LOGOUTCMD || cmd == EXITCMD))
+            {
+                byte[] lenb = new byte[sizeof(int)];
+                int len = await memStream.ReadAsync(lenb, 0, lenb.Length);
+                byte[] cmdb = new byte[len];
+
+                int len_of_cmd = BitConverter.ToInt32(lenb, 0);
+                int count = 0;
+                while (count < len_of_cmd)
+                {
+                    cmdb[count++] = Convert.ToByte(memStream.ReadByte());
+                }
+                if(len_of_cmd > 0)
+                {
+                    cmd = Encoding.UTF8.GetString(cmdb);
+
+                    Console.WriteLine($"The command DDDDDDDDDDDDDDDXXXXXXXXXXXXXXXXXXXXXXXX is {cmd}");
+                }
+                Console.WriteLine($"The command lenghtttttttttttttt is {len_of_cmd}");
+
+            }
+        }
+
+        public void ProcessOutputHandler(object sendingProcess, DataReceivedEventArgs outData)
+        {
+            string outd = outData.Data;
+            while (outd != null)
+            {
+                Console.WriteLine($"Data received from Std out is:{outd}");
+                outd = outData.Data;
+            }
+
         }
 
             public async Task RunProcessAsync(string ansicon_cmd, string plink_cmd)
@@ -92,6 +136,7 @@ namespace VTab
                     startInfo.RedirectStandardOutput = true;
                     startInfo.RedirectStandardError = true;
                     startInfo.RedirectStandardInput = true;
+                    
 
                     // plink.exe is the cmd tool for putty.
                     myProcess.StartInfo = startInfo;
@@ -102,23 +147,33 @@ namespace VTab
                     // on the desktop, it must terminate itself or you can do it programmatically
                     // from this application using the Kill method.
 
+                    
+                    myProcess.OutputDataReceived += ProcessOutputHandler;
                     String outstr = "vj";
                     myProcess.Start();
+
+                    tabProc = new TabProcess(myProcess.StandardInput, myProcess.StandardOutput);
+
+                    StreamWriter process_std_input_stream = myProcess.StandardInput;
                     String tempStr = "";
-                    outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    //outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    outstr = await tabProc.ReadFromProcessAsync();
                     tempStr += outstr;
-                    outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    //outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    outstr = await tabProc.ReadFromProcessAsync();
                     tempStr += outstr;
 
                     string nextcmd = "\n"; // Enter after success
-                    await WriteToProcessAsync(myProcess.StandardInput, nextcmd);
-                    
+                    //await WriteToProcessAsync(myProcess.StandardInput, nextcmd);
+                    await tabProc.WriteToProcessAsync(nextcmd);
+
                     ANSIEscapeSeq ansi_seq = new ANSIEscapeSeq();
                     // TODO: The end with character may differ : Taken Care, ANSIEscapeSeq class
                     while (outstr != null && !outstr.Trim().EndsWith("$"))
                     {
                         tempStr += outstr + "\n";
-                        outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                        //outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                        outstr = await tabProc.ReadFromProcessAsync();
                         /*
                         byte[] escTitleBytesRec = Encoding.ASCII.GetBytes(outstr);
                         foreach (byte b in escTitleBytesRec)
@@ -130,6 +185,7 @@ namespace VTab
                     var out_tup = ansi_seq.getTitleAndCommandPrompt(outstr);
                     myTabPage.setTitle(out_tup.Item1);
                     myTabPage.setPrompt(out_tup.Item2);
+                    myTabPage.setProcessTab(tabProc);
                     tabControl1.TabPages.Add(myTabPage);
 
                     myTabPage.WriteLine(tempStr);
@@ -137,7 +193,9 @@ namespace VTab
 
                     // Loop until the command is logout or exit or on error.
 
-                    outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    //await ReadFromMemStreamAsync();
+                    //outstr = await ReadFromProcessAsync(myProcess.StandardOutput);
+                    Console.WriteLine($"Form1: The output we got is: {outstr}");
                     /*
                     try
                     {
